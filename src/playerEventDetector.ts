@@ -1,0 +1,40 @@
+import {spawn} from 'node:child_process';
+import {event} from './event.js';
+import rl from 'node:readline';
+import {parseStringPromise} from 'xml2js';
+import {CurrentState} from './types.js';
+
+process.nextTick(() => event.emit('update', {}));
+const format = [
+  '<metadata>',
+  '  <status>{{markup_escape(status)}}</status>',
+  '  <title>{{markup_escape(title)}}</title>',
+  '  <artist>{{markup_escape(artist)}}</artist>',
+  '  <length>{{markup_escape(duration(mpris:length))}}</length>',
+  '  <position>{{markup_escape(duration(position))}}</position>',
+  '  <progress>{{markup_escape((0+position) / mpris:length)}}</progress>',
+  '</metadata>',
+];
+const playerCtl = spawn('playerctl', [
+  'metadata',
+  '-F',
+  '--format',
+  format.join(''),
+]);
+
+event.on('exit', () => playerCtl.kill());
+
+rl.createInterface({input: playerCtl.stdout}).on('line', async line => {
+  const data: {metadata: CurrentState['metadata']} | null =
+    await parseStringPromise(line, {explicitArray: false});
+  if (data === null) {
+    return;
+  }
+  event.emit('update', data);
+});
+
+playerCtl.addListener('error', e => {
+  console.error(e);
+  // eslint-disable-next-line n/no-process-exit
+  process.exit(1);
+});
