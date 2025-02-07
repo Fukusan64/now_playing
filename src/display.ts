@@ -20,7 +20,7 @@ const info = (data: Readonly<CurrentState>) => {
 const progress = (data: Readonly<CurrentState>) => {
   const barLength = data.windowSize.width;
   const bar = '-'.repeat(barLength).split('');
-  const pos = Math.floor(barLength * Number(data.metadata.progress));
+  const pos = Math.floor(barLength * data.metadata.progress);
   const fontColorRed = '\x1b[31m';
   const fontColorGray = '\x1b[90m';
   const resetFontColor = '\x1b[39m';

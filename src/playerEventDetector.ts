@@ -29,7 +29,12 @@ export const setup = (event: EventEmitter<CurrentState, 'update' | 'exit'>) => {
 
   rl.createInterface({input: playerCtl.stdout}).on('line', async line => {
     const data: {metadata: CurrentState['metadata']} | null =
-      await parseStringPromise(line, {explicitArray: false});
+      await parseStringPromise(line, {explicitArray: false})
+        .then(val => {
+          val.progress = Number(val.progress);
+          return val;
+        })
+        .catch(() => null);
     if (data === null) {
       return;
     }

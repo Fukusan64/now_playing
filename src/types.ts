@@ -6,7 +6,7 @@ export type CurrentState = {
     artist: string;
     length: string;
     position: string;
-    progress: string;
+    progress: number;
   };
   exited: boolean;
 };
