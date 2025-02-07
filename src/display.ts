@@ -1,5 +1,6 @@
 import type {CurrentState} from './types.js';
-import {event} from './event.js';
+import type {EventEmitter} from './event.js';
+
 import eaw from 'eastasianwidth';
 import {
   cursorHide,
@@ -72,8 +73,9 @@ const display = (data: Readonly<CurrentState>) => {
   process.stdout.write(output + cursorRestorePosition);
 };
 
-event.on('update', display);
-
-event.on('exit', () => {
-  process.stdout.write(cursorShow);
-});
+export const setup = (event: EventEmitter<CurrentState, 'update' | 'exit'>) => {
+  event.on('update', display);
+  event.on('exit', () => {
+    process.stdout.write(cursorShow);
+  });
+};
