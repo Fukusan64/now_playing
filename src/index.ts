@@ -10,7 +10,7 @@ const initState: CurrentState = {
     width: process.stdout.columns,
     height: process.stdout.rows,
   },
-  metadata: {
+  mediaState: {
     status: 'Stopped',
     title: '',
     artist: '',

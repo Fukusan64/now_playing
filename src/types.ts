@@ -1,6 +1,6 @@
 export type CurrentState = {
   windowSize: {width: number; height: number};
-  metadata: {
+  mediaState: {
     status: 'Playing' | 'Paused' | 'Stopped';
     title: string;
     artist: string;

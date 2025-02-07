@@ -12,15 +12,19 @@ import {
 } from 'ansi-escapes';
 
 const info = (data: Readonly<CurrentState>) => {
-  const title = eaw.slice(data.metadata.title, 0, data.windowSize.width - 8);
-  const artist = eaw.slice(data.metadata.artist, 0, data.windowSize.width - 8);
+  const title = eaw.slice(data.mediaState.title, 0, data.windowSize.width - 8);
+  const artist = eaw.slice(
+    data.mediaState.artist,
+    0,
+    data.windowSize.width - 8,
+  );
   return [`Title:  ${title}`, `Artist: ${artist}`].join('\n');
 };
 
 const progress = (data: Readonly<CurrentState>) => {
   const barLength = data.windowSize.width;
   const bar = '-'.repeat(barLength).split('');
-  const pos = Math.floor(barLength * data.metadata.progress);
+  const pos = Math.floor(barLength * data.mediaState.progress);
   const fontColorRed = '\x1b[31m';
   const fontColorGray = '\x1b[90m';
   const resetFontColor = '\x1b[39m';
@@ -31,13 +35,13 @@ const progress = (data: Readonly<CurrentState>) => {
 const time = (data: Readonly<CurrentState>) => {
   const padding =
     data.windowSize.width -
-    data.metadata.position.length -
-    data.metadata.length.length;
-  return `${data.metadata.position}${' '.repeat(padding)}${data.metadata.length}`;
+    data.mediaState.position.length -
+    data.mediaState.length.length;
+  return `${data.mediaState.position}${' '.repeat(padding)}${data.mediaState.length}`;
 };
 
 const controller = (data: Readonly<CurrentState>) => {
-  const isPlaying = data.metadata.status === 'Playing';
+  const isPlaying = data.mediaState.status === 'Playing';
   const controller = [
     `<<    <    ${isPlaying ? '|>' : '||'}    >    >>`,
     ' J    j    k     l    L ',

@@ -6,14 +6,14 @@ import {parseStringPromise} from 'xml2js';
 import {CurrentState} from './types.js';
 
 const format = [
-  '<metadata>',
+  '<mediaState>',
   '  <status>{{markup_escape(status)}}</status>',
   '  <title>{{markup_escape(title)}}</title>',
   '  <artist>{{markup_escape(artist)}}</artist>',
   '  <length>{{markup_escape(duration(mpris:length))}}</length>',
   '  <position>{{markup_escape(duration(position))}}</position>',
   '  <progress>{{markup_escape((0+position) / mpris:length)}}</progress>',
-  '</metadata>',
+  '</mediaState>',
 ] as const;
 
 export const setup = (event: EventEmitter<CurrentState, 'update' | 'exit'>) => {
@@ -26,12 +26,11 @@ export const setup = (event: EventEmitter<CurrentState, 'update' | 'exit'>) => {
 
   process.nextTick(() => event.emit('update', {}));
   event.on('exit', () => playerCtl.kill());
-
   rl.createInterface({input: playerCtl.stdout}).on('line', async line => {
-    const data: {metadata: CurrentState['metadata']} | null =
+    const data: {mediaState: CurrentState['mediaState']} | null =
       await parseStringPromise(line, {explicitArray: false})
         .then(val => {
-          val.progress = Number(val.progress);
+          val.mediaState.progress = Number(val.mediaState.progress);
           return val;
         })
         .catch(() => null);
