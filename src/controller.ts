@@ -21,9 +21,7 @@ const skipCommand = debounce(
   (sec: number, callBack: (code: number | null) => void) => {
     const absSec = Math.abs(sec);
     const sign = sec > 0 ? '+' : '-';
-    spawn('playerctl', ['position', `${absSec}${sign}`]).on('exit', code => {
-      callBack(code);
-    });
+    spawn('playerctl', ['position', `${absSec}${sign}`]).on('exit', callBack);
   },
   300,
 );
