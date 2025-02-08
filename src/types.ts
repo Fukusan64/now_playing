@@ -8,5 +8,6 @@ export type CurrentState = {
     position: string;
     progress: number;
   };
+  timeSkipSeconds: number;
   exited: boolean;
 };

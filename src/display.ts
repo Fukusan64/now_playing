@@ -33,11 +33,18 @@ const progress = (data: Readonly<CurrentState>) => {
 };
 
 const time = (data: Readonly<CurrentState>) => {
+  let timeSkipSeconds = '';
+  if (data.timeSkipSeconds !== 0) {
+    const sign = data.timeSkipSeconds > 0 ? '+' : '-';
+    const abs = Math.abs(data.timeSkipSeconds);
+    timeSkipSeconds = `${sign}${abs}`;
+  }
   const padding =
     data.windowSize.width -
     data.mediaState.position.length -
+    timeSkipSeconds.length -
     data.mediaState.length.length;
-  return `${data.mediaState.position}${' '.repeat(padding)}${data.mediaState.length}`;
+  return `${data.mediaState.position}${timeSkipSeconds}${' '.repeat(padding)}${data.mediaState.length}`;
 };
 
 const controller = (data: Readonly<CurrentState>) => {

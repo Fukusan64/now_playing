@@ -14,10 +14,11 @@ const initState: CurrentState = {
     status: 'Stopped',
     title: '',
     artist: '',
-    length: '--:--',
-    position: '--:--',
+    length: '00:00',
+    position: '00:00',
     progress: 0,
   },
+  timeSkipSeconds: 0,
   exited: false,
 };
 const event = initEventEmitter(initState, ['update', 'exit']);
