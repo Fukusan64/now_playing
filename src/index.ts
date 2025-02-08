@@ -28,6 +28,8 @@ playerEventDetector.setup(event);
 resizeDetector.setup(event);
 controller.setup(event);
 
+event.emit('update', {});
+
 process.on('exit', () => {
   event.emit('exit', {exited: true});
 });

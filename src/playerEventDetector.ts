@@ -24,7 +24,6 @@ export const setup = (event: EventEmitter<CurrentState, 'update' | 'exit'>) => {
     format.join(''),
   ]);
 
-  process.nextTick(() => event.emit('update', {}));
   event.on('exit', () => playerCtl.kill());
   rl.createInterface({input: playerCtl.stdout}).on('line', async line => {
     const data: {mediaState: CurrentState['mediaState']} | null =
