@@ -4,8 +4,8 @@ export type CurrentState = {
     status: 'Playing' | 'Paused' | 'Stopped';
     title: string;
     artist: string;
-    length: string;
-    position: string;
+    length: number;
+    position: number;
     progress: number;
   };
   timeSkipSeconds: number;

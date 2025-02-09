@@ -21,30 +21,68 @@ const info = (data: Readonly<CurrentState>) => {
   return [`Title:  ${title}`, `Artist: ${artist}`].join('\n');
 };
 
-const progress = (data: Readonly<CurrentState>) => {
+// 曲の長さと再生位置から進捗度を0~1で算出
+// 範囲を超える場合は0,1に設定
+const progress = (length: number, position: number) => {
+  if (length === 0) return 0;
+  const progress = position / length;
+  if (progress < 0) return 0;
+  if (progress > 1) return 1;
+  return progress;
+};
+
+const seekBar = (data: Readonly<CurrentState>) => {
   const barLength = data.windowSize.width;
   const bar = '-'.repeat(barLength).split('');
-  const pos = Math.floor(barLength * data.mediaState.progress);
+  const currentPosition = Math.min(
+    barLength - 1,
+    Math.floor(
+      barLength * progress(data.mediaState.length, data.mediaState.position),
+    ),
+  );
   const fontColorRed = '\x1b[31m';
   const fontColorGray = '\x1b[90m';
   const resetFontColor = '\x1b[39m';
-  bar[pos] = 'o' + fontColorGray;
+
+  bar[currentPosition] += fontColorGray;
+
+  const cursorPosition = Math.min(
+    barLength - 1,
+    Math.floor(
+      barLength *
+        progress(
+          data.mediaState.length,
+          data.mediaState.position + data.timeSkipSeconds * 1e6,
+        ),
+    ),
+  );
+  bar[cursorPosition] = 'o' + bar[cursorPosition].slice(1);
   return fontColorRed + bar.join('') + resetFontColor;
+};
+
+// 秒数を時間:分:秒に変換
+const formatTime = (sec: number) => {
+  const hour = Math.floor(sec / 3600);
+  const minute = Math.floor((sec % 3600) / 60);
+  const second = Math.floor(sec % 60);
+  return `${hour > 0 ? hour + ':' : ''}${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`;
 };
 
 const time = (data: Readonly<CurrentState>) => {
   let timeSkipSeconds = '';
   if (data.timeSkipSeconds !== 0) {
     const sign = data.timeSkipSeconds > 0 ? '+' : '-';
-    const abs = Math.abs(data.timeSkipSeconds);
-    timeSkipSeconds = `${sign}${abs}`;
+    const skipTime = formatTime(Math.abs(data.timeSkipSeconds));
+    timeSkipSeconds = `${sign}${skipTime}`;
   }
+  const position = formatTime(data.mediaState.position / 1e6);
+  const length = formatTime(data.mediaState.length / 1e6);
   const padding =
     data.windowSize.width -
-    data.mediaState.position.length -
+    position.length -
     timeSkipSeconds.length -
-    data.mediaState.length.length;
-  return `${data.mediaState.position}${timeSkipSeconds}${' '.repeat(padding)}${data.mediaState.length}`;
+    length.length;
+  return `${position}${timeSkipSeconds}${' '.repeat(padding)}${length}`;
 };
 
 const controller = (data: Readonly<CurrentState>) => {
@@ -75,12 +113,9 @@ const display = (data: Readonly<CurrentState>) => {
     );
     return;
   }
-  const output = [
-    info(data),
-    progress(data),
-    time(data),
-    controller(data),
-  ].join('\n');
+  const output = [info(data), seekBar(data), time(data), controller(data)].join(
+    '\n',
+  );
   process.stdout.write(output + cursorRestorePosition);
 };
 

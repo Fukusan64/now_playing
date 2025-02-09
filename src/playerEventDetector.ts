@@ -10,8 +10,8 @@ const format = [
   '  <status>{{markup_escape(status)}}</status>',
   '  <title>{{markup_escape(title)}}</title>',
   '  <artist>{{markup_escape(artist)}}</artist>',
-  '  <length>{{markup_escape(duration(mpris:length))}}</length>',
-  '  <position>{{markup_escape(duration(position))}}</position>',
+  '  <length>{{markup_escape(mpris:length)}}</length>',
+  '  <position>{{markup_escape(position)}}</position>',
   '  <progress>{{markup_escape((0+position) / mpris:length)}}</progress>',
   '</mediaState>',
 ] as const;
@@ -30,6 +30,8 @@ export const setup = (event: EventEmitter<CurrentState, 'update' | 'exit'>) => {
       await parseStringPromise(line, {explicitArray: false})
         .then(val => {
           val.mediaState.progress = Number(val.mediaState.progress);
+          val.mediaState.position = Number(val.mediaState.position);
+          val.mediaState.length = Number(val.mediaState.length);
           return val;
         })
         .catch(() => null);
