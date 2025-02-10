@@ -1,5 +1,5 @@
 import type {CurrentState} from './types.js';
-import type {EventEmitter} from './event.js';
+import type {StateManager} from './stateManager.js';
 
 import eaw from 'eastasianwidth';
 import {
@@ -119,9 +119,11 @@ const display = (data: Readonly<CurrentState>) => {
   process.stdout.write(output + cursorRestorePosition);
 };
 
-export const setup = (event: EventEmitter<CurrentState, 'update' | 'exit'>) => {
-  event.on('update', display);
-  event.on('exit', () => {
+export const setup = (
+  stateManager: StateManager<CurrentState, 'update' | 'exit'>,
+) => {
+  stateManager.on('update', display);
+  stateManager.on('exit', () => {
     process.stdout.write(cursorShow);
   });
 };

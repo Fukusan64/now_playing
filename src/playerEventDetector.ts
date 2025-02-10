@@ -1,4 +1,4 @@
-import type {EventEmitter} from './event.js';
+import type {StateManager} from './stateManager.js';
 
 import {spawn} from 'node:child_process';
 import rl from 'node:readline';
@@ -16,7 +16,9 @@ const format = [
   '</mediaState>',
 ] as const;
 
-export const setup = (event: EventEmitter<CurrentState, 'update' | 'exit'>) => {
+export const setup = (
+  stateManager: StateManager<CurrentState, 'update' | 'exit'>,
+) => {
   const playerCtl = spawn('playerctl', [
     'metadata',
     '-F',
@@ -24,7 +26,7 @@ export const setup = (event: EventEmitter<CurrentState, 'update' | 'exit'>) => {
     format.join(''),
   ]);
 
-  event.on('exit', () => playerCtl.kill());
+  stateManager.on('exit', () => playerCtl.kill());
   rl.createInterface({input: playerCtl.stdout}).on('line', async line => {
     const data: {mediaState: CurrentState['mediaState']} | null =
       await parseStringPromise(line, {explicitArray: false})
@@ -38,7 +40,7 @@ export const setup = (event: EventEmitter<CurrentState, 'update' | 'exit'>) => {
     if (data === null) {
       return;
     }
-    event.emit('update', data);
+    stateManager.emit('update', data);
   });
 
   playerCtl.addListener('error', e => {

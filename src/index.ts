@@ -1,4 +1,4 @@
-import {initEventEmitter} from './event.js';
+import {initStateManager} from './stateManager.js';
 import * as display from './display.js';
 import * as playerEventDetector from './playerEventDetector.js';
 import * as resizeDetector from './resizeDetector.js';
@@ -21,15 +21,15 @@ const initState: CurrentState = {
   timeSkipSeconds: 0,
   exited: false,
 };
-const event = initEventEmitter(initState, ['update', 'exit']);
+const stateManager = initStateManager(initState, ['update', 'exit']);
 
-display.setup(event);
-playerEventDetector.setup(event);
-resizeDetector.setup(event);
-controller.setup(event);
+display.setup(stateManager);
+playerEventDetector.setup(stateManager);
+resizeDetector.setup(stateManager);
+controller.setup(stateManager);
 
-event.emit('update', {});
+stateManager.emit('update', {});
 
 process.on('exit', () => {
-  event.emit('exit', {exited: true});
+  stateManager.emit('exit', {exited: true});
 });

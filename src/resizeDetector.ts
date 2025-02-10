@@ -1,8 +1,8 @@
-import type {EventEmitter} from './event.js';
+import type {StateManager} from './stateManager.js';
 
 import {CurrentState} from './types.js';
 
-export const setup = (event: EventEmitter<CurrentState, 'update'>) => {
+export const setup = (stateManager: StateManager<CurrentState, 'update'>) => {
   process.stdout.on('resize', () => {
     const data = {
       windowSize: {
@@ -10,6 +10,6 @@ export const setup = (event: EventEmitter<CurrentState, 'update'>) => {
         height: process.stdout.rows,
       },
     };
-    event.emit('update', data);
+    stateManager.emit('update', data);
   });
 };

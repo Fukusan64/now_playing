@@ -1,4 +1,4 @@
-import type {EventEmitter} from './event.js';
+import type {StateManager} from './stateManager.js';
 
 import {spawn} from 'node:child_process';
 import readline from 'node:readline';
@@ -35,7 +35,9 @@ const skipCommand = debounce(
 readline.emitKeypressEvents(process.stdin);
 process.stdin.setRawMode(true);
 
-export const setup = (event: EventEmitter<CurrentState, 'exit' | 'update'>) => {
+export const setup = (
+  stateManager: StateManager<CurrentState, 'exit' | 'update'>,
+) => {
   let timeSkipSeconds = 0;
   process.stdin.on('keypress', (_, key) => {
     if (key.ctrl && key.name === 'c') {
@@ -48,10 +50,10 @@ export const setup = (event: EventEmitter<CurrentState, 'exit' | 'update'>) => {
         break;
       case 'j':
         timeSkipSeconds -= 5;
-        event.emit('update', {timeSkipSeconds});
+        stateManager.emit('update', {timeSkipSeconds});
         skipCommand(timeSkipSeconds, () => {
           timeSkipSeconds = 0;
-          event.emit('update', {timeSkipSeconds});
+          stateManager.emit('update', {timeSkipSeconds});
         });
         break;
       case 'k':
@@ -59,10 +61,10 @@ export const setup = (event: EventEmitter<CurrentState, 'exit' | 'update'>) => {
         break;
       case 'l':
         timeSkipSeconds += 5;
-        event.emit('update', {timeSkipSeconds});
+        stateManager.emit('update', {timeSkipSeconds});
         skipCommand(timeSkipSeconds, () => {
           timeSkipSeconds = 0;
-          event.emit('update', {timeSkipSeconds});
+          stateManager.emit('update', {timeSkipSeconds});
         });
         break;
       case 'L':
@@ -71,5 +73,5 @@ export const setup = (event: EventEmitter<CurrentState, 'exit' | 'update'>) => {
     }
   });
 
-  event.on('exit', () => process.stdin.setRawMode(false));
+  stateManager.on('exit', () => process.stdin.setRawMode(false));
 };

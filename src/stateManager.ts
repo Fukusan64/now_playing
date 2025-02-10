@@ -23,15 +23,15 @@ const mergeState = <T>(
   return copiedCurrentState;
 };
 
-export type EventEmitter<T, EventList extends string> = {
+export type StateManager<T, EventList extends string> = {
   on(name: EventList, callback: (state: Readonly<T>) => void): void;
   emit(name: EventList, newState: RecursivePartial<T>): void;
 };
 
-export const initEventEmitter = <T, EventList extends string>(
+export const initStateManager = <T, EventList extends string>(
   init: T,
   eventList: EventList[],
-): EventEmitter<T, EventList> => {
+): StateManager<T, EventList> => {
   let currentState = init;
   const listener = new Map<EventList, ((state: Readonly<T>) => void)[]>();
   return {
