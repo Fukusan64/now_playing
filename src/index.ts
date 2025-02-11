@@ -16,7 +16,6 @@ const initState: CurrentState = {
     artist: '',
     length: 0,
     position: 0,
-    progress: 0,
   },
   timeSkipSeconds: 0,
   exited: false,

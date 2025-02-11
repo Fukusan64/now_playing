@@ -12,7 +12,6 @@ const format = [
   '  <artist>{{markup_escape(artist)}}</artist>',
   '  <length>{{markup_escape(mpris:length)}}</length>',
   '  <position>{{markup_escape(position)}}</position>',
-  '  <progress>{{markup_escape((0+position) / mpris:length)}}</progress>',
   '</mediaState>',
 ] as const;
 
@@ -31,7 +30,6 @@ export const setup = (
     const data: {mediaState: CurrentState['mediaState']} | null =
       await parseStringPromise(line, {explicitArray: false})
         .then(val => {
-          val.mediaState.progress = Number(val.mediaState.progress);
           val.mediaState.position = Number(val.mediaState.position);
           val.mediaState.length = Number(val.mediaState.length);
           return val;
