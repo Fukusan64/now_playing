@@ -18,16 +18,17 @@ const debounce = <T extends unknown[]>(
 };
 
 const skipCommand = debounce(
-  (sec: number, callBack: (code: number | null) => void) => {
-    let current = '';
-    spawn('playerctl', ['position'])
-      .on('exit', () => {
-        spawn('playerctl', [
-          'position',
-          `${Math.max(0.01, Number(current) + sec)}`,
-        ]).on('exit', callBack);
-      })
-      .stdout.on('data', data => (current += data.toString()));
+  (
+    stateManager: StateManager<CurrentState>,
+    callBack: (code: number | null) => void,
+  ) => {
+    const state = stateManager.currentState;
+    const nextPosition =
+      state.mediaState.position / 1e6 + state.timeSkipSeconds;
+    spawn('playerctl', ['position', `${Math.max(0.01, nextPosition)}`]).on(
+      'exit',
+      callBack,
+    );
   },
   300,
 );
@@ -51,7 +52,7 @@ export const setup = (
       case 'j':
         timeSkipSeconds -= 5;
         stateManager.emit('update', {timeSkipSeconds});
-        skipCommand(timeSkipSeconds, () => {
+        skipCommand(stateManager, () => {
           timeSkipSeconds = 0;
           stateManager.emit('update', {timeSkipSeconds});
         });
@@ -62,7 +63,7 @@ export const setup = (
       case 'l':
         timeSkipSeconds += 5;
         stateManager.emit('update', {timeSkipSeconds});
-        skipCommand(timeSkipSeconds, () => {
+        skipCommand(stateManager, () => {
           timeSkipSeconds = 0;
           stateManager.emit('update', {timeSkipSeconds});
         });
