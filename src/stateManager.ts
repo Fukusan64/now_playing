@@ -23,9 +23,10 @@ const mergeState = <T>(
   return copiedCurrentState;
 };
 
-export type StateManager<T, EventList extends string> = {
+export type StateManager<T, EventList extends string = never> = {
   on(name: EventList, callback: (state: Readonly<T>) => void): void;
   emit(name: EventList, newState: RecursivePartial<T>): void;
+  readonly currentState: T;
 };
 
 export const initStateManager = <T, EventList extends string>(
@@ -47,6 +48,9 @@ export const initStateManager = <T, EventList extends string>(
       }
       currentState = mergeState(currentState, newState);
       listener.get(name)?.forEach(v => v(currentState));
+    },
+    get currentState() {
+      return structuredClone(currentState);
     },
   };
 };
