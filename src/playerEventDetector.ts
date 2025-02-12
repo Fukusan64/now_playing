@@ -35,7 +35,18 @@ export const setup = (
           return val;
         })
         .catch(() => null);
-    if (data === null) {
+    if (data === null) return;
+
+    if (data.mediaState.status === 'Stopped') {
+      stateManager.emit('update', {
+        mediaState: {
+          status: 'Stopped',
+          title: '',
+          artist: '',
+          length: 0,
+          position: 0,
+        },
+      });
       return;
     }
     stateManager.emit('update', data);
