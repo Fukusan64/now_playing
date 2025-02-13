@@ -42,7 +42,7 @@ const seekBar = (data: Readonly<CurrentState>) => {
   );
   const fontColorRed = '\x1b[31m';
   const fontColorGray = '\x1b[90m';
-  const resetFontColor = '\x1b[39m';
+  const resetStyle = '\x1b[0m';
 
   bar[currentPosition] += fontColorGray;
 
@@ -57,7 +57,7 @@ const seekBar = (data: Readonly<CurrentState>) => {
     ),
   );
   bar[cursorPosition] = 'o' + bar[cursorPosition].slice(1);
-  return fontColorRed + bar.join('') + resetFontColor;
+  return fontColorRed + bar.join('') + resetStyle;
 };
 
 // 秒数を時間:分:秒に変換
@@ -99,6 +99,45 @@ const controller = (data: Readonly<CurrentState>) => {
   return controller.map(str => ' '.repeat(marginLeft) + str).join('\n');
 };
 
+const player = (data: Readonly<CurrentState>) =>
+  [info(data), seekBar(data), time(data), controller(data)].join('\n');
+
+const miniPlayer = (data: Readonly<CurrentState>) => {
+  const barLength = data.windowSize.width;
+  const currentPosition = Math.min(
+    barLength - 1,
+    Math.floor(
+      barLength * progress(data.mediaState.length, data.mediaState.position),
+    ),
+  );
+
+  let timeSkipSeconds = '';
+  if (data.timeSkipSeconds !== 0) {
+    const sign = data.timeSkipSeconds > 0 ? '+' : '-';
+    const skipTime = formatTime(Math.abs(data.timeSkipSeconds));
+    timeSkipSeconds = `${sign}${skipTime}`;
+  }
+  const position = formatTime(data.mediaState.position / 1e6);
+
+  const {title, artist, status} = data.mediaState;
+  const isPlaying = status === 'Playing';
+  const info =
+    `${isPlaying ? '▶' : '⏸'}` +
+    `${position}${timeSkipSeconds} ` +
+    `${title}${artist ? '@' : ''}${artist}`;
+  const text = info + ' '.repeat(Math.max(0, barLength - eaw.length(info)));
+
+  const bgRed = '\x1b[101m';
+  const resetStyle = '\x1b[0m';
+
+  return (
+    bgRed +
+    eaw.slice(text, 0, currentPosition) +
+    resetStyle +
+    eaw.slice(text, currentPosition, barLength)
+  );
+};
+
 let isFirstRender = true;
 const display = (data: Readonly<CurrentState>) => {
   if (isFirstRender) {
@@ -107,16 +146,17 @@ const display = (data: Readonly<CurrentState>) => {
     isFirstRender = false;
   }
   process.stdout.write(cursorSavePosition + eraseDown);
-  if (data.windowSize.width <= 24 || data.windowSize.height <= 5) {
+  if (data.windowSize.width <= 24) {
     process.stdout.write(
       'Terminal window is too small.' + cursorRestorePosition,
     );
     return;
   }
-  const output = [info(data), seekBar(data), time(data), controller(data)].join(
-    '\n',
-  );
-  process.stdout.write(output + cursorRestorePosition);
+  if (data.windowSize.height > 5) {
+    process.stdout.write(player(data) + cursorRestorePosition);
+  } else {
+    process.stdout.write(miniPlayer(data) + cursorRestorePosition);
+  }
 };
 
 export const setup = (
