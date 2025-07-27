@@ -7,7 +7,7 @@ const mergeDeep = (target: any, source: any) => {
   for (const key of Object.keys(source)) {
     if (source[key] instanceof Object && key in target) {
       mergeDeep(target[key], source[key]);
-    } else if (key in target) {
+    } else {
       target[key] = source[key];
     }
   }
@@ -19,8 +19,7 @@ const mergeState = <T>(
   newState: RecursivePartial<T>,
 ) => {
   const copiedCurrentState: T = structuredClone(currentState);
-  mergeDeep(copiedCurrentState, newState);
-  return copiedCurrentState;
+  return mergeDeep(copiedCurrentState, newState);
 };
 
 export type StateManager<T, EventList extends string = never> = {

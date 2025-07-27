@@ -11,13 +11,17 @@ import {
   eraseDown,
 } from 'ansi-escapes';
 
+const playerSelector = (data: Readonly<CurrentState>) => {
+  const {selectedPlayer} = data;
+  return 'h < ' + selectedPlayer + ' > ;';
+};
+
 const info = (data: Readonly<CurrentState>) => {
-  const title = eaw.slice(data.mediaState.title, 0, data.windowSize.width - 8);
-  const artist = eaw.slice(
-    data.mediaState.artist,
-    0,
-    data.windowSize.width - 8,
-  );
+  if (!data.selectedPlayer) return '';
+  const mediaState = data.playbackStatus[data.selectedPlayer];
+  if (!mediaState) return '';
+  const title = eaw.slice(mediaState.title, 0, data.windowSize.width - 8);
+  const artist = eaw.slice(mediaState.artist, 0, data.windowSize.width - 8);
   return [`Title:  ${title}`, `Artist: ${artist}`].join('\n');
 };
 
@@ -32,13 +36,14 @@ const progress = (length: number, position: number) => {
 };
 
 const seekBar = (data: Readonly<CurrentState>) => {
+  if (!data.selectedPlayer) return '';
+  const mediaState = data.playbackStatus[data.selectedPlayer];
+  if (!mediaState) return '';
   const barLength = data.windowSize.width;
   const bar = '-'.repeat(barLength).split('');
   const currentPosition = Math.min(
     barLength - 1,
-    Math.floor(
-      barLength * progress(data.mediaState.length, data.mediaState.position),
-    ),
+    Math.floor(barLength * progress(mediaState.length, mediaState.position)),
   );
   const fontColorRed = '\x1b[31m';
   const fontColorGray = '\x1b[90m';
@@ -51,8 +56,8 @@ const seekBar = (data: Readonly<CurrentState>) => {
     Math.floor(
       barLength *
         progress(
-          data.mediaState.length,
-          data.mediaState.position + data.timeSkipSeconds * 1e6,
+          mediaState.length,
+          mediaState.position + data.timeSkipSeconds * 1e6,
         ),
     ),
   );
@@ -69,14 +74,17 @@ const formatTime = (sec: number) => {
 };
 
 const time = (data: Readonly<CurrentState>) => {
+  if (!data.selectedPlayer) return '';
+  const mediaState = data.playbackStatus[data.selectedPlayer];
+  if (!mediaState) return '';
   let timeSkipSeconds = '';
   if (data.timeSkipSeconds !== 0) {
     const sign = data.timeSkipSeconds > 0 ? '+' : '-';
     const skipTime = formatTime(Math.abs(data.timeSkipSeconds));
     timeSkipSeconds = `${sign}${skipTime}`;
   }
-  const position = formatTime(data.mediaState.position / 1e6);
-  const length = formatTime(data.mediaState.length / 1e6);
+  const position = formatTime(mediaState.position / 1e6);
+  const length = formatTime(mediaState.length / 1e6);
   const padding =
     data.windowSize.width -
     position.length -
@@ -86,7 +94,10 @@ const time = (data: Readonly<CurrentState>) => {
 };
 
 const controller = (data: Readonly<CurrentState>) => {
-  const isPlaying = data.mediaState.status === 'Playing';
+  if (!data.selectedPlayer) return '';
+  const mediaState = data.playbackStatus[data.selectedPlayer];
+  if (!mediaState) return '';
+  const isPlaying = mediaState.status === 'Playing';
   const controller = [
     `<<    <    ${isPlaying ? '|>' : '||'}    >    >>`,
     ' J    j    k     l    L ',
@@ -100,15 +111,22 @@ const controller = (data: Readonly<CurrentState>) => {
 };
 
 const player = (data: Readonly<CurrentState>) =>
-  [info(data), seekBar(data), time(data), controller(data)].join('\n');
+  [
+    playerSelector(data),
+    info(data),
+    seekBar(data),
+    time(data),
+    controller(data),
+  ].join('\n');
 
 const miniPlayer = (data: Readonly<CurrentState>) => {
+  if (!data.selectedPlayer) return '';
+  const mediaState = data.playbackStatus[data.selectedPlayer];
+  if (!mediaState) return '';
   const barLength = data.windowSize.width;
   const currentPosition = Math.min(
     barLength - 1,
-    Math.floor(
-      barLength * progress(data.mediaState.length, data.mediaState.position),
-    ),
+    Math.floor(barLength * progress(mediaState.length, mediaState.position)),
   );
 
   let timeSkipSeconds = '';
@@ -117,9 +135,9 @@ const miniPlayer = (data: Readonly<CurrentState>) => {
     const skipTime = formatTime(Math.abs(data.timeSkipSeconds));
     timeSkipSeconds = `${sign}${skipTime}`;
   }
-  const position = formatTime(data.mediaState.position / 1e6);
+  const position = formatTime(mediaState.position / 1e6);
 
-  const {title, artist, status} = data.mediaState;
+  const {title, artist, status} = mediaState;
   const isPlaying = status === 'Playing';
   const info =
     `${isPlaying ? '▶' : '⏸'}` +
@@ -142,7 +160,7 @@ let isFirstRender = true;
 const display = (data: Readonly<CurrentState>) => {
   if (isFirstRender) {
     // Note: 描画範囲の確保
-    process.stdout.write(cursorHide + '\n'.repeat(6) + cursorUp(6));
+    process.stdout.write(cursorHide + '\n'.repeat(7) + cursorUp(7));
     isFirstRender = false;
   }
   process.stdout.write(cursorSavePosition + eraseDown);
@@ -152,7 +170,7 @@ const display = (data: Readonly<CurrentState>) => {
     );
     return;
   }
-  if (data.windowSize.height > 5) {
+  if (data.windowSize.height > 6) {
     process.stdout.write(player(data) + cursorRestorePosition);
   } else {
     process.stdout.write(miniPlayer(data) + cursorRestorePosition);

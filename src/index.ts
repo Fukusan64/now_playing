@@ -10,25 +10,24 @@ const initState: CurrentState = {
     width: process.stdout.columns,
     height: process.stdout.rows,
   },
-  mediaState: {
-    status: 'Stopped',
-    title: '',
-    artist: '',
-    length: 0,
-    position: 0,
-  },
+  players: [],
+  playbackStatus: {},
   timeSkipSeconds: 0,
   exited: false,
 };
 const stateManager = initStateManager(initState, ['update', 'exit']);
 
-display.setup(stateManager);
-playerEventDetector.setup(stateManager);
-resizeDetector.setup(stateManager);
-controller.setup(stateManager);
+const main = async () => {
+  display.setup(stateManager);
+  await playerEventDetector.setup(stateManager);
+  resizeDetector.setup(stateManager);
+  controller.setup(stateManager);
 
-stateManager.emit('update', {});
+  stateManager.emit('update', {});
 
-process.on('exit', () => {
-  stateManager.emit('exit', {exited: true});
-});
+  process.on('exit', () => {
+    stateManager.emit('exit', {exited: true});
+  });
+};
+
+await main();

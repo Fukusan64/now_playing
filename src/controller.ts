@@ -23,12 +23,16 @@ const skipCommand = debounce(
     callBack: (code: number | null) => void,
   ) => {
     const state = stateManager.currentState;
-    const nextPosition =
-      state.mediaState.position / 1e6 + state.timeSkipSeconds;
-    spawn('playerctl', ['position', `${Math.max(0.01, nextPosition)}`]).on(
-      'exit',
-      callBack,
-    );
+    if (!state.selectedPlayer) return;
+    const mediaState = state.playbackStatus[state.selectedPlayer];
+    if (!mediaState) return;
+    const nextPosition = mediaState.position / 1e6 + state.timeSkipSeconds;
+    spawn('playerctl', [
+      'position',
+      `${Math.max(0.01, nextPosition)}`,
+      '-p',
+      state.selectedPlayer,
+    ]).on('exit', callBack);
   },
   300,
 );
@@ -45,9 +49,18 @@ export const setup = (
       // eslint-disable-next-line n/no-process-exit
       process.exit();
     }
+    const state = stateManager.currentState;
+    if (!state.selectedPlayer) return;
     switch (key.sequence) {
+      case 'h': {
+        const index = state.players.indexOf(state.selectedPlayer);
+        stateManager.emit('update', {
+          selectedPlayer: state.players.at(index - 1),
+        });
+        break;
+      }
       case 'J':
-        spawn('playerctl', ['previous']);
+        spawn('playerctl', ['previous', '-p', state.selectedPlayer]);
         break;
       case 'j':
         timeSkipSeconds -= 5;
@@ -58,7 +71,7 @@ export const setup = (
         });
         break;
       case 'k':
-        spawn('playerctl', ['play-pause']);
+        spawn('playerctl', ['play-pause', '-p', state.selectedPlayer]);
         break;
       case 'l':
         timeSkipSeconds += 5;
@@ -69,8 +82,16 @@ export const setup = (
         });
         break;
       case 'L':
-        spawn('playerctl', ['next']);
+        spawn('playerctl', ['next', '-p', state.selectedPlayer]);
         break;
+      case ';': {
+        const index = state.players.indexOf(state.selectedPlayer);
+        const length = state.players.length;
+        stateManager.emit('update', {
+          selectedPlayer: state.players.at((index + 1) % length),
+        });
+        break;
+      }
     }
   });
 
