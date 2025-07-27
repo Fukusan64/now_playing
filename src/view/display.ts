@@ -13,7 +13,7 @@ import {
 
 const playerSelector = (data: Readonly<CurrentState>) => {
   const {selectedPlayer} = data;
-  return 'h < ' + selectedPlayer + ' > ;';
+  return 'h < ' + (selectedPlayer ?? 'no player') + ' > ;';
 };
 
 const info = (data: Readonly<CurrentState>) => {
