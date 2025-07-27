@@ -20,9 +20,39 @@ const info = (data: Readonly<CurrentState>) => {
   if (!data.selectedPlayer) return '';
   const mediaState = data.playbackStatus[data.selectedPlayer];
   if (!mediaState) return '';
-  const title = eaw.slice(mediaState.title, 0, data.windowSize.width - 8);
-  const artist = eaw.slice(mediaState.artist, 0, data.windowSize.width - 8);
-  return [`Title:  ${title}`, `Artist: ${artist}`].join('\n');
+  const {title, artist} = mediaState;
+  const maxWidth = data.windowSize.width;
+
+  const artistPart = artist ? `@${artist}` : '';
+  const artistWidth = eaw.length(artistPart);
+  const availableWidthForTitle = maxWidth - artistWidth;
+
+  // artistだけで画面幅を超える場合は、表示できる分だけartist partを返す
+  if (availableWidthForTitle <= 0) {
+    return eaw.slice(artistPart, 0, maxWidth);
+  }
+
+  const titleWidth = eaw.length(title);
+  if (titleWidth <= availableWidthForTitle) {
+    return title + artistPart;
+  }
+
+  // titleを切り詰める必要がある
+  const ellipsis = '...';
+  const ellipsisWidth = eaw.length(ellipsis);
+
+  // "..." を表示するスペースすらない場合は、titleを表示できるだけ表示
+  if (availableWidthForTitle <= ellipsisWidth) {
+    const truncatedTitle = eaw.slice(title, 0, availableWidthForTitle);
+    return truncatedTitle + artistPart;
+  }
+
+  const truncatedTitle = eaw.slice(
+    title,
+    0,
+    availableWidthForTitle - ellipsisWidth,
+  );
+  return truncatedTitle + ellipsis + artistPart;
 };
 
 // 曲の長さと再生位置から進捗度を0~1で算出
@@ -160,7 +190,7 @@ let isFirstRender = true;
 const display = (data: Readonly<CurrentState>) => {
   if (isFirstRender) {
     // Note: 描画範囲の確保
-    process.stdout.write(cursorHide + '\n'.repeat(7) + cursorUp(7));
+    process.stdout.write(cursorHide + '\n'.repeat(6) + cursorUp(6));
     isFirstRender = false;
   }
   process.stdout.write(cursorSavePosition + eraseDown);
@@ -170,7 +200,7 @@ const display = (data: Readonly<CurrentState>) => {
     );
     return;
   }
-  if (data.windowSize.height > 6) {
+  if (data.windowSize.height > 5) {
     process.stdout.write(player(data) + cursorRestorePosition);
   } else {
     process.stdout.write(miniPlayer(data) + cursorRestorePosition);
