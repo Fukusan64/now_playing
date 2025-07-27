@@ -1,8 +1,7 @@
-import type {StateManager} from './stateManager.js';
-
-import {spawn} from 'node:child_process';
+import type {StateManager} from '../model/stateManager.js';
+import * as playerService from '../model/playerService.js';
 import readline from 'node:readline';
-import {CurrentState} from './types.js';
+import {CurrentState} from '../model/types.js';
 
 const debounce = <T extends unknown[]>(
   fn: (...args: T) => void,
@@ -27,12 +26,7 @@ const skipCommand = debounce(
     const mediaState = state.playbackStatus[state.selectedPlayer];
     if (!mediaState) return;
     const nextPosition = mediaState.position / 1e6 + state.timeSkipSeconds;
-    spawn('playerctl', [
-      'position',
-      `${Math.max(0.01, nextPosition)}`,
-      '-p',
-      state.selectedPlayer,
-    ]).on('exit', callBack);
+    playerService.seek(state.selectedPlayer, nextPosition, callBack);
   },
   300,
 );
@@ -60,7 +54,7 @@ export const setup = (
         break;
       }
       case 'J':
-        spawn('playerctl', ['previous', '-p', state.selectedPlayer]);
+        playerService.previous(state.selectedPlayer);
         break;
       case 'j':
         timeSkipSeconds -= 5;
@@ -71,7 +65,7 @@ export const setup = (
         });
         break;
       case 'k':
-        spawn('playerctl', ['play-pause', '-p', state.selectedPlayer]);
+        playerService.playPause(state.selectedPlayer);
         break;
       case 'l':
         timeSkipSeconds += 5;
@@ -82,7 +76,7 @@ export const setup = (
         });
         break;
       case 'L':
-        spawn('playerctl', ['next', '-p', state.selectedPlayer]);
+        playerService.next(state.selectedPlayer);
         break;
       case ';': {
         const index = state.players.indexOf(state.selectedPlayer);

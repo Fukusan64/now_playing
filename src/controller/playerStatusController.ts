@@ -1,9 +1,10 @@
-import type {StateManager} from './stateManager.js';
+import type {StateManager} from '../model/stateManager.js';
+import * as playerService from '../model/playerService.js';
 
 import {spawn, ChildProcessWithoutNullStreams} from 'node:child_process';
 import rl from 'node:readline';
 import {parseStringPromise} from 'xml2js';
-import {CurrentState, MediaState} from './types.js';
+import {CurrentState, MediaState} from '../model/types.js';
 
 const format = [
   '<mediaState>',
@@ -14,54 +15,6 @@ const format = [
   '  <position>{{markup_escape(position)}}</position>',
   '</mediaState>',
 ] as const;
-
-const getPlayers = () =>
-  new Promise<string[]>(resolve => {
-    const playerCtl = spawn('playerctl', ['-l']);
-    let players = '';
-    playerCtl.stdout.on('data', data => {
-      players += data.toString();
-    });
-    playerCtl.on('exit', () => {
-      resolve(players.split('\n').filter(v => v !== ''));
-    });
-  });
-
-const getInitialPlaybackStatus = async (players: string[]) => {
-  const entries = await Promise.all(
-    players.map(
-      player =>
-        new Promise<[string, MediaState | null]>(resolve => {
-          const playerCtl = spawn('playerctl', [
-            'metadata',
-            '-p',
-            player,
-            '--format',
-            format.join(''),
-          ]);
-          let xml = '';
-          playerCtl.stdout.on('data', data => {
-            xml += data.toString();
-          });
-          playerCtl.on('exit', async () => {
-            const data: {mediaState: MediaState} | null =
-              await parseStringPromise(xml, {explicitArray: false})
-                .then(val => {
-                  val.mediaState.position = Number(val.mediaState.position);
-                  val.mediaState.length = Number(val.mediaState.length);
-                  return val;
-                })
-                .catch(() => null);
-            resolve([player, data ? data.mediaState : null]);
-          });
-        }),
-    ),
-  );
-  // nullを除外してfromEntries
-  return Object.fromEntries(
-    entries.filter(([, state]) => state !== null) as [string, MediaState][],
-  );
-};
 
 let playerCtl: ChildProcessWithoutNullStreams | undefined;
 const updatePlayerCtl = (
@@ -119,8 +72,8 @@ const updatePlayerCtl = (
 export const setup = async (
   stateManager: StateManager<CurrentState, 'update' | 'exit'>,
 ) => {
-  const players = await getPlayers();
-  const playbackStatus = await getInitialPlaybackStatus(players);
+  const players = await playerService.getPlayers();
+  const playbackStatus = await playerService.getInitialPlaybackStatus(players);
   stateManager.emit('update', {
     players,
     selectedPlayer: players[0],
@@ -129,9 +82,9 @@ export const setup = async (
   updatePlayerCtl(stateManager);
 
   setInterval(async () => {
-    const players = await getPlayers();
+    const players = await playerService.getPlayers();
     const selectedPlayer = stateManager.currentState.selectedPlayer;
-    const playbackStatus = await getInitialPlaybackStatus(players);
+    const playbackStatus = await playerService.getInitialPlaybackStatus(players);
     stateManager.emit('update', {
       players,
       selectedPlayer:

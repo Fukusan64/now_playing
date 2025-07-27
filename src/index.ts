@@ -1,9 +1,9 @@
-import {initStateManager} from './stateManager.js';
-import * as display from './display.js';
-import * as playerEventDetector from './playerEventDetector.js';
-import * as resizeDetector from './resizeDetector.js';
-import * as controller from './controller.js';
-import {CurrentState} from './types.js';
+import {initStateManager} from './model/stateManager.js';
+import * as display from './view/display.js';
+import * as playerStatusController from './controller/playerStatusController.js';
+import * as resizeController from './controller/resizeController.js';
+import * as keyboardController from './controller/keyboardController.js';
+import {CurrentState} from './model/types.js';
 
 const initState: CurrentState = {
   windowSize: {
@@ -19,9 +19,9 @@ const stateManager = initStateManager(initState, ['update', 'exit']);
 
 const main = async () => {
   display.setup(stateManager);
-  await playerEventDetector.setup(stateManager);
-  resizeDetector.setup(stateManager);
-  controller.setup(stateManager);
+  await playerStatusController.setup(stateManager);
+  resizeController.setup(stateManager);
+  keyboardController.setup(stateManager);
 
   stateManager.emit('update', {});
 

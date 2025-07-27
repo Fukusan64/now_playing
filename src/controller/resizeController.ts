@@ -1,6 +1,6 @@
-import type {StateManager} from './stateManager.js';
+import type {StateManager} from '../model/stateManager.js';
 
-import {CurrentState} from './types.js';
+import {CurrentState} from '../model/types.js';
 
 export const setup = (stateManager: StateManager<CurrentState, 'update'>) => {
   process.stdout.on('resize', () => {

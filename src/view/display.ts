@@ -1,5 +1,5 @@
-import type {CurrentState} from './types.js';
-import type {StateManager} from './stateManager.js';
+import type {CurrentState} from '../model/types.js';
+import type {StateManager} from '../model/stateManager.js';
 
 import eaw from 'eastasianwidth';
 import {
