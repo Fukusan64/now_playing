@@ -4,6 +4,7 @@ export type MediaState = {
   artist: string;
   length: number;
   position: number;
+  artUrl: string;
 };
 
 export type CurrentState = {
@@ -13,4 +14,10 @@ export type CurrentState = {
   playbackStatus: {[player: string]: MediaState};
   timeSkipSeconds: number;
   exited: boolean;
+  thumbnail: {
+    show: boolean;
+    currentArtUrl?: string;
+    lastArtUrl?: string;
+    lastChafa?: string;
+  };
 };

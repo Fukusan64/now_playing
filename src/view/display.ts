@@ -3,6 +3,7 @@ import type {StateManager} from '../model/stateManager.js';
 
 import eaw from 'eastasianwidth';
 import {
+  clearScreen,
   cursorHide,
   cursorRestorePosition,
   cursorSavePosition,
@@ -10,10 +11,66 @@ import {
   cursorUp,
   eraseDown,
 } from 'ansi-escapes';
+import {exec, spawn} from 'child_process';
+
+const renderThumbnail = async (
+  data: Readonly<CurrentState>,
+  stateManager: StateManager<CurrentState, 'update' | 'exit'>,
+) => {
+  const {thumbnail} = data;
+  if (!thumbnail.show || !thumbnail.currentArtUrl) {
+    return;
+  }
+  if (
+    thumbnail.currentArtUrl === thumbnail.lastArtUrl &&
+    thumbnail.lastChafa
+  ) {
+    process.stdout.write(thumbnail.lastChafa);
+    return;
+  }
+  const url = thumbnail.currentArtUrl;
+  const width = Math.floor(data.windowSize.width * 0.8);
+  const height = Math.floor(data.windowSize.height * 0.5);
+  const chafa = await new Promise<string>(resolve => {
+    const chafaProcess = spawn('chafa', [
+      url,
+      '--size',
+      `${width}x${height}`,
+      '--fill',
+      'symbols',
+      '--stretch',
+    ]);
+
+    let stdout = '';
+    let stderr = '';
+
+    chafaProcess.stdout.on('data', data => {
+      stdout += data.toString();
+    });
+
+    chafaProcess.stderr.on('data', data => {
+      stderr += data.toString();
+    });
+
+    chafaProcess.on('close', code => {
+      if (code === 0) {
+        resolve(stdout);
+      } else {
+        // chafaがエラーを吐いても握り潰す
+        resolve('');
+      }
+    });
+    chafaProcess.on('error', () => {
+      resolve('');
+    });
+  });
+  stateManager.emit('update', {thumbnail: {lastChafa: chafa}});
+  process.stdout.write(chafa);
+};
 
 const playerSelector = (data: Readonly<CurrentState>) => {
   const {selectedPlayer} = data;
-  return 'h < ' + (selectedPlayer ?? 'no player') + ' > ;';
+  return 'h < ' + (selectedPlayer ?? 'no player') + ' >;';
 };
 
 const info = (data: Readonly<CurrentState>) => {
@@ -169,7 +226,7 @@ const miniPlayer = (data: Readonly<CurrentState>) => {
 
   const {title, artist, status} = mediaState;
   const isPlaying = status === 'Playing';
-  const info =
+  const info = 
     `${isPlaying ? '▶' : '⏸'}` +
     `${position}${timeSkipSeconds} ` +
     `${title}${artist ? '@' : ''}${artist}`;
@@ -187,13 +244,18 @@ const miniPlayer = (data: Readonly<CurrentState>) => {
 };
 
 let isFirstRender = true;
-const display = (data: Readonly<CurrentState>) => {
+const display = async (
+  data: Readonly<CurrentState>,
+  stateManager: StateManager<CurrentState, 'update' | 'exit'>,
+) => {
   if (isFirstRender) {
-    // Note: 描画範囲の確保
-    process.stdout.write(cursorHide + '\n'.repeat(6) + cursorUp(6));
+    process.stdout.write(clearScreen + cursorHide);
     isFirstRender = false;
   }
   process.stdout.write(cursorSavePosition + eraseDown);
+
+  await renderThumbnail(data, stateManager);
+
   if (data.windowSize.width <= 24) {
     process.stdout.write(
       'Terminal window is too small.' + cursorRestorePosition,
@@ -210,7 +272,7 @@ const display = (data: Readonly<CurrentState>) => {
 export const setup = (
   stateManager: StateManager<CurrentState, 'update' | 'exit'>,
 ) => {
-  stateManager.on('update', display);
+  stateManager.on('update', async data => await display(data, stateManager));
   stateManager.on('exit', () => {
     process.stdout.write(cursorShow);
   });

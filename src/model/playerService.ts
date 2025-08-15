@@ -9,6 +9,7 @@ const format = [
   '  <artist>{{markup_escape(artist)}}</artist>',
   '  <length>{{markup_escape(mpris:length)}}</length>',
   '  <position>{{markup_escape(position)}}</position>',
+  '  <artUrl>{{markup_escape(mpris:artUrl)}}</artUrl>',
   '</mediaState>',
 ] as const;
 
